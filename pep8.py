@@ -1187,8 +1187,7 @@ class Checker(object):
     Load a Python source file, tokenize it, check coding style.
     """
 
-    def __init__(self, filename, report, lines=None,
-                 options=None, **kwargs):
+    def __init__(self, filename, report, options=None, **kwargs):
         if options is None:
             options = StyleGuide(kwargs).options
         else:
@@ -1201,16 +1200,14 @@ class Checker(object):
         self.filename = filename
         if filename is None:
             self.filename = 'stdin'
-            self.lines = lines or []
-        elif lines is None:
+            self.lines = []
+        else:
             try:
                 self.lines = readlines(filename)
             except IOError:
                 exc_type, exc = sys.exc_info()[:2]
                 self._io_error = '%s: %s' % (exc_type.__name__, exc)
                 self.lines = []
-        else:
-            self.lines = lines
         self.report = report
         self.report_error = self.report.error
 
@@ -1601,11 +1598,10 @@ class StyleGuide(object):
         self.options.report = reporter(self.options)
         return self.options.report
 
-    def check_files(self, paths=None):
+    def check_files(self, report, paths=None):
         """Run all checks on the paths."""
         if paths is None:
             paths = self.paths
-        report = self.options.report
         runner = self.runner
         report.start()
         for path in paths:
@@ -1616,11 +1612,11 @@ class StyleGuide(object):
         report.stop()
         return report
 
-    def input_file(self, filename, lines=None, expected=None, line_offset=0):
+    def input_file(self, filename, expected=None, line_offset=0):
         """Run all checks on a Python source file."""
         if self.options.verbose:
             print('checking %s' % filename)
-        fchecker = Checker(filename, self.options.report, lines=lines, options=self.options)
+        fchecker = Checker(filename, self.options.report, options=self.options)
         return fchecker.check_all(expected=expected, line_offset=line_offset)
 
     def input_dir(self, dirname):
@@ -1941,7 +1937,7 @@ def _main():
             sys.exit(1)
     if options.testsuite:
         init_tests(pep8style)
-    report = pep8style.check_files()
+    report = pep8style.check_files(pep8style.options.report)
     if options.statistics:
         report.print_statistics()
     if options.benchmark:
