@@ -1507,6 +1507,28 @@ class StandardReport(BaseReport):
                 print(check.__doc__.lstrip('\n').rstrip())
         return code
 
+class TeamcityReport(StandardReport):
+    """Collect results and print teamcity messages."""
+
+    def __init__(self, options):
+        super(TeamcityReport, self).__init__(options)
+
+    def get_file_results(self):
+        if self.file_errors:
+            self._teamcity("testFailed name='%s'" % self._test_name())
+        self._teamcity("testFinished name='%s'" % self._test_name())
+        return super(TeamcityReport, self).get_file_results()
+
+    def init_file(self, filename, lines, expected, line_offset):
+        ret = super(TeamcityReport, self).init_file(filename, lines, expected, line_offset)
+        self._teamcity("testStarted name='%s' captureStandardOutput='true'" % self._test_name())
+        return ret
+
+    def _teamcity(self, msg):
+        print "##teamcity[%s]" % msg
+
+    def _test_name(self):
+        return self.filename.split(os.path.sep)[-1][:3]
 
 class DiffReport(StandardReport):
     """Collect and print the results for the changed lines only."""
@@ -1855,6 +1877,8 @@ def process_options(arglist=None, parse_argv=False, config_file=None):
     parser.add_option('--show-pep8', action='store_true',
                       help="show text of PEP 8 for each error "
                            "(implies --first)")
+    parser.add_option('--teamcity', action='store_true', default=False,
+                      help="Write teamcity reporting tags")
     parser.add_option('--statistics', action='store_true',
                       help="count errors and warnings")
     parser.add_option('--count', action='store_true',
@@ -1916,6 +1940,9 @@ def process_options(arglist=None, parse_argv=False, config_file=None):
         stdin = stdin_get_value()
         options.selected_lines = parse_udiff(stdin, options.filename, args[0])
         args = sorted(options.selected_lines)
+
+    if options.teamcity:
+        options.reporter = TeamcityReport
 
     return options, args
 
