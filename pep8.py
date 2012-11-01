@@ -1187,8 +1187,8 @@ class Checker(object):
     Load a Python source file, tokenize it, check coding style.
     """
 
-    def __init__(self, filename, lines=None,
-                 options=None, report=None, **kwargs):
+    def __init__(self, filename, report, lines=None,
+                 options=None, **kwargs):
         if options is None:
             options = StyleGuide(kwargs).options
         else:
@@ -1211,7 +1211,7 @@ class Checker(object):
                 self.lines = []
         else:
             self.lines = lines
-        self.report = report or options.report
+        self.report = report
         self.report_error = self.report.error
 
     def readline(self):
@@ -1594,11 +1594,11 @@ class StyleGuide(object):
         options.ignore_code = self.ignore_code
         options.physical_checks = self.get_checks('physical_line')
         options.logical_checks = self.get_checks('logical_line')
-        self.init_report()
+        self.init_report(self.options.reporter)
 
-    def init_report(self, reporter=None):
+    def init_report(self, reporter):
         """Initialize the report instance."""
-        self.options.report = (reporter or self.options.reporter)(self.options)
+        self.options.report = reporter(self.options)
         return self.options.report
 
     def check_files(self, paths=None):
@@ -1620,7 +1620,7 @@ class StyleGuide(object):
         """Run all checks on a Python source file."""
         if self.options.verbose:
             print('checking %s' % filename)
-        fchecker = Checker(filename, lines=lines, options=self.options)
+        fchecker = Checker(filename, self.options.report, lines=lines, options=self.options)
         return fchecker.check_all(expected=expected, line_offset=line_offset)
 
     def input_dir(self, dirname):
@@ -1741,7 +1741,7 @@ def selftest(options):
             if match is None:
                 continue
             code, source = match.groups()
-            checker = Checker(None, options=options, report=report)
+            checker = Checker(None, report, options=options)
             for part in source.split(r'\n'):
                 part = part.replace(r'\t', '\t')
                 part = part.replace(r'\s', ' ')
