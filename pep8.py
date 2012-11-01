@@ -1528,7 +1528,7 @@ class TeamcityReport(StandardReport):
         print "##teamcity[%s]" % msg
 
     def _test_name(self):
-        return self.filename.split(os.path.sep)[-1][:3]
+        return self.filename.split(os.path.sep)[-1][:-3]
 
 class DiffReport(StandardReport):
     """Collect and print the results for the changed lines only."""
