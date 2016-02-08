@@ -429,14 +429,13 @@ def continued_indentation(logical_line, tokens, indent_level, noqa, verbose):
     indent = [last_indent[1]]
     if verbose >= 3:
         print(">>> " + tokens[0][4].rstrip())
-
+    last_token_multiline = None
     for token_type, text, start, end, line in tokens:
 
         newline = row < start[0] - first_row
         if newline:
             row = start[0] - first_row
-            newline = (not last_token_multiline and
-                       token_type not in (tokenize.NL, tokenize.NEWLINE))
+            newline = (not last_token_multiline and token_type not in (tokenize.NL, tokenize.NEWLINE))
 
         if newline:
             # this is the beginning of a continuation line.
@@ -495,8 +494,7 @@ def continued_indentation(logical_line, tokens, indent_level, noqa, verbose):
                 yield start, "%s continuation line %s" % error
 
         # look for visual indenting
-        if (parens[row] and token_type not in (tokenize.NL, tokenize.COMMENT)
-                and not indent[depth]):
+        if (parens[row] and token_type not in (tokenize.NL, tokenize.COMMENT) and not indent[depth]):
             indent[depth] = start[1]
             indent_chances[start[1]] = True
             if verbose >= 4:
@@ -872,6 +870,7 @@ def explicit_line_join(logical_line, tokens):
     Okay: aaa = "bbb " \\n    "ccc"
     """
     prev_start = prev_end = parens = 0
+    backslash = None
     for token_type, text, start, end, line in tokens:
         if start[0] != prev_start and parens and backslash:
             yield backslash, "E502 the backslash is redundant between brackets"
@@ -1275,8 +1274,7 @@ class Checker(object):
                 start_row, start = token[2]
                 if end_row != start_row:    # different row
                     prev_text = self.lines[end_row - 1][end - 1]
-                    if prev_text == ',' or (prev_text not in '{[('
-                                            and text not in '}])'):
+                    if prev_text == ',' or (prev_text not in '{[(' and text not in '}])'):
                         logical.append(' ')
                         length += 1
                 elif end != start:  # different column
